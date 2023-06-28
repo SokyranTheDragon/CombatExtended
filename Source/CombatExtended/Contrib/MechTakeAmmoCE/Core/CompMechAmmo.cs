@@ -169,7 +169,31 @@ namespace CombatExtended
 
         public void SetMagCount()
         {
-            Current.Game.GetComponent<GameComponent_MechLoadoutDialogManger>()?.RegisterCompMechAmmo(this);
+            var comps = new List<CompMechAmmo>();
+            var ammoTypes = new HashSet<AmmoLink>(AmmoUser.Props.ammoSet.ammoTypes);
+
+            foreach (var pawn in Find.Selector.SelectedPawns)
+            {
+                var comp = pawn.GetComp<CompMechAmmo>();
+                if (comp != null)
+                {
+                    // Check ammo types to allow different weapons with same ammo
+                    if (ammoTypes.SetEquals(comp.AmmoUser.Props.ammoSet.ammoTypes))
+                    {
+                        comps.Add(comp);
+                    }
+                    else
+                    {
+                        Messages.Message("MTA_CannotSetLoadoutForMultipleEquipment".Translate(), MessageTypeDefOf.RejectInput);
+                        return;
+                    }
+                }
+            }
+
+            if (comps.Count > 0)
+            {
+                Find.WindowStack.Add(new Dialog_SetMagCountBatched(comps));
+            }
         }
 
         public void TakeAmmoNow()
